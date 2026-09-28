@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer & ATS Score Checker</title>
+    <meta name="description" content="Evaluate your resume against industry ATS standards, identify skill gaps, and get actionable recommendations.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="brand-badge">⚡ AI-Powered ATS Resume Evaluator</div>
+        <h1>Next-Gen Resume Analyzer</h1>
+        <p>Audit your resume for Applicant Tracking Systems (ATS), detect skill gaps, and match with your dream tech roles.</p>
+    </div>
+
+    <!-- Flash message alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    <span>⚠️</span>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="upload-card">
+
+        <!-- Loading spinner overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <h3 style="font-weight: 700; color: #1e1b4b;">Analyzing Resume...</h3>
+            <p style="color: #64748b; font-size: 14px;">Parsing technical skills, checking ATS compliance, and evaluating strengths.</p>
+        </div>
+
+        <form action="/analyze" method="POST" enctype="multipart/form-data" id="resumeForm">
+            <div class="form-grid">
+
+                <!-- Drag & Drop Zone -->
+                <div class="dropzone-container" id="dropzone">
+                    <input type="file" name="resume" id="resumeInput" accept=".pdf,.docx" required>
+                    <div class="dropzone-icon">📄</div>
+                    <div class="dropzone-text">
+                        <h3>Drag & drop your resume here, or <span style="color: var(--primary); text-decoration: underline;">browse</span></h3>
+                        <p>Supports PDF (.pdf) and Microsoft Word (.docx) — Max 16MB</p>
+                    </div>
+                    <div class="selected-file-info" id="fileInfo">
+                        <span id="fileName">No file selected</span>
+                        <span id="fileSize" style="color: var(--text-muted); font-size: 12px; margin-left: 8px;"></span>
+                    </div>
+                </div>
+
+                <!-- Custom Role & JD Benchmark -->
+                <div class="options-panel">
+                    <h4>🎯 Target Role & Job Match Options (Optional)</h4>
+
+                    <div class="form-group">
+                        <label for="targetRole">Select Target Tech Domain</label>
+                        <select name="target_role" id="targetRole" class="form-select">
+                            <option value="software_engineer" selected>Software Engineer (General CS)</option>
+                            <option value="fullstack">Full Stack Developer</option>
+                            <option value="frontend">Frontend Developer</option>
+                            <option value="backend">Backend Developer</option>
+                            <option value="datascience">Data Scientist / AI Engineer</option>
+                            <option value="devops">DevOps & Cloud Engineer</option>
+                            <option value="mobile">Mobile App Developer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jobDescription">Or Paste Job Description to match against:</label>
+                        <textarea 
+                            name="job_description" 
+                            id="jobDescription" 
+                            class="form-textarea" 
+                            placeholder="Paste specific job requirements or tech stack here for custom skill-gap evaluation..."
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>⚡ Run ATS & Profile Analysis</span>
+                </button>
+
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Feature Pillars -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 36px;">
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); padding: 18px; color: white;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🤖</div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">ATS Score Check</h4>
+            <p style="font-size: 12.5px; color: #cbd5e1;">Evaluates layout, formatting, standard sections, and parseability.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); padding: 18px; color: white;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🔍</div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">Skill Gap Analysis</h4>
+            <p style="font-size: 12.5px; color: #cbd5e1;">Detects matched technologies and highlights missing keywords for your target role.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); padding: 18px; color: white;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">Competency Radar</h4>
+            <p style="font-size: 12.5px; color: #cbd5e1;">Visualizes technical depth, project quality, and industry strength.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); padding: 18px; color: white;">
+            <div style="font-size: 24px; margin-bottom: 8px;">💡</div>
+            <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">Actionable Advice</h4>
+            <p style="font-size: 12.5px; color: #cbd5e1;">Clear, tailored recommendations to boost interview callback rates.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('resumeInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const form = document.getElementById('resumeForm');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Drag over styling
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.add('drag-active');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-active');
+        }, false);
+    });
+
+    // File selection handler
+    fileInput.addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            fileName.textContent = '📎 ' + file.name;
+            const sizeInKb = (file.size / 1024).toFixed(1);
+            fileSize.textContent = `(${sizeInKb} KB)`;
+            fileInfo.style.display = 'inline-block';
+        }
+    });
+
+    // Form submit loading overlay
+    form.addEventListener('submit', function() {
+        if (fileInput.files.length > 0) {
+            loadingOverlay.style.display = 'flex';
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Report — {{ name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Chart.js for interactive analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="result-card">
+
+        <!-- Top Profile Banner -->
+        <div class="profile-banner">
+            <div class="profile-main">
+                <div class="avatar">
+                    {{ name[:1] if name and name != 'Candidate' else '👤' }}
+                </div>
+                <div class="candidate-meta">
+                    <h2>{{ name }}</h2>
+                    <div class="contact-row">
+                        {% if email and email != 'Not detected' %}
+                            <a href="mailto:{{ email }}" class="contact-badge">✉️ {{ email }}</a>
+                        {% endif %}
+                        {% if phone and phone != 'Not detected' %}
+                            <a href="tel:{{ phone }}" class="contact-badge">📞 {{ phone }}</a>
+                        {% endif %}
+                        {% if links and links.get('linkedin') %}
+                            <a href="{{ links['linkedin'] }}" target="_blank" rel="noopener noreferrer" class="contact-badge">💼 LinkedIn</a>
+                        {% endif %}
+                        {% if links and links.get('github') %}
+                            <a href="{{ links['github'] }}" target="_blank" rel="noopener noreferrer" class="contact-badge">🐙 GitHub</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button onclick="window.print()" class="btn-action btn-outline">
+                    🖨️ Print / Save PDF
+                </button>
+                <a href="/" class="btn-action btn-primary-small">
+                    🔄 Analyze Another
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Metrics Strip -->
+        <div class="metrics-strip">
+            <div class="metric-pill">
+                <span class="metric-icon">📄</span>
+                <div class="metric-data">
+                    <span class="val">{{ filename }}</span>
+                    <span class="lbl">Uploaded File</span>
+                </div>
+            </div>
+            <div class="metric-pill">
+                <span class="metric-icon">📝</span>
+                <div class="metric-data">
+                    <span class="val">{{ word_count }}</span>
+                    <span class="lbl">Total Words (~{{ reading_time }}m read)</span>
+                </div>
+            </div>
+            <div class="metric-pill">
+                <span class="metric-icon">⚡</span>
+                <div class="metric-data">
+                    <span class="val">{{ action_verbs_found }}</span>
+                    <span class="lbl">Action Verbs Found</span>
+                </div>
+            </div>
+            <div class="metric-pill">
+                <span class="metric-icon">📈</span>
+                <div class="metric-data">
+                    <span class="val">{{ metrics_found }}</span>
+                    <span class="lbl">Measurable Metrics Found</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Five Core Score Cards -->
+        <div class="scores-grid">
+            
+            <!-- ATS Score -->
+            <div class="score-card">
+                <div class="score-card-title">ATS Compatibility</div>
+                <div class="score-card-val {% if ats_score >= 75 %}score-high{% elif ats_score >= 50 %}score-med{% else %}score-low{% endif %}">
+                    {{ ats_score }}%
+                </div>
+                <span class="score-tag {% if ats_score >= 75 %}score-high-bg{% elif ats_score >= 50 %}score-med-bg{% else %}score-low-bg{% endif %}">
+                    {% if ats_score >= 75 %}High Match{% elif ats_score >= 50 %}Moderate{% else %}Needs Work{% endif %}
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ ats_score }}%; background: {% if ats_score >= 75 %}#10b981{% elif ats_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+            </div>
+
+            <!-- Resume Strength -->
+            <div class="score-card">
+                <div class="score-card-title">Resume Strength</div>
+                <div class="score-card-val {% if strength_score >= 75 %}score-high{% elif strength_score >= 50 %}score-med{% else %}score-low{% endif %}">
+                    {{ strength_score }}%
+                </div>
+                <span class="score-tag {% if strength_score >= 75 %}score-high-bg{% elif strength_score >= 50 %}score-med-bg{% else %}score-low-bg{% endif %}">
+                    {% if strength_score >= 75 %}Strong Impact{% elif strength_score >= 50 %}Average{% else %}Weak Impact{% endif %}
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ strength_score }}%; background: {% if strength_score >= 75 %}#10b981{% elif strength_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+            </div>
+
+            <!-- Technical Skills -->
+            <div class="score-card">
+                <div class="score-card-title">Technical Breadth</div>
+                <div class="score-card-val {% if technical_score >= 75 %}score-high{% elif technical_score >= 50 %}score-med{% else %}score-low{% endif %}">
+                    {{ technical_score }}%
+                </div>
+                <span class="score-tag {% if technical_score >= 75 %}score-high-bg{% elif technical_score >= 50 %}score-med-bg{% else %}score-low-bg{% endif %}">
+                    {{ skills|length }} Skills Found
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ technical_score }}%; background: {% if technical_score >= 75 %}#10b981{% elif technical_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+            </div>
+
+            <!-- Project Score -->
+            <div class="score-card">
+                <div class="score-card-title">Project Quality</div>
+                <div class="score-card-val {% if project_score >= 75 %}score-high{% elif project_score >= 50 %}score-med{% else %}score-low{% endif %}">
+                    {{ project_score }}%
+                </div>
+                <span class="score-tag {% if project_score >= 75 %}score-high-bg{% elif project_score >= 50 %}score-med-bg{% else %}score-low-bg{% endif %}">
+                    {% if project_score >= 75 %}Detailed{% elif project_score >= 50 %}Satisfactory{% else %}Needs Detail{% endif %}
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ project_score }}%; background: {% if project_score >= 75 %}#10b981{% elif project_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+            </div>
+
+            <!-- Job Match -->
+            <div class="score-card">
+                <div class="score-card-title">Target Role Fit</div>
+                <div class="score-card-val {% if job_match_score >= 75 %}score-high{% elif job_match_score >= 50 %}score-med{% else %}score-low{% endif %}">
+                    {{ job_match_score }}%
+                </div>
+                <span class="score-tag {% if job_match_score >= 75 %}score-high-bg{% elif job_match_score >= 50 %}score-med-bg{% else %}score-low-bg{% endif %}">
+                    {{ matched_skills|length }}/{{ (matched_skills|length + missing_skills|length) }} Required
+                </span>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ job_match_score }}%; background: {% if job_match_score >= 75 %}#10b981{% elif job_match_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Target Role & Skill Gap Analysis -->
+        <div class="role-match-card">
+            <div class="role-match-header">
+                <div>
+                    <span style="font-size: 13px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;">Target Benchmark</span>
+                    <h3>🎯 {{ target_role }}</h3>
+                </div>
+                <div class="role-match-badge">
+                    Match Rate: {{ job_match_score }}%
+                </div>
+            </div>
+
+            <div class="skills-diff-grid">
+                <div class="diff-box matched">
+                    <h4>✅ Matched Skills Detected ({{ matched_skills|length }})</h4>
+                    <div class="chips-wrap">
+                        {% if matched_skills %}
+                            {% for skill in matched_skills %}
+                                <span class="chip chip-matched">✓ {{ skill }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <p style="font-size: 13px; color: #166534;">No direct skill matches for this specific target role.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="diff-box missing">
+                    <h4>⚠️ Recommended Skills to Add ({{ missing_skills|length }})</h4>
+                    <div class="chips-wrap">
+                        {% if missing_skills %}
+                            {% for skill in missing_skills %}
+                                <span class="chip chip-missing">+ {{ skill }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <p style="font-size: 13px; color: #92400e;">Great job! You have covered all key benchmark skills for this role.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>🕸️ Profile Competency Radar</h3>
+                <canvas id="competencyRadar"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📊 Performance Metrics Breakdown</h3>
+                <canvas id="metricsBar"></canvas>
+            </div>
+        </div>
+
+        <!-- Categorized Skills Grid -->
+        <h3 class="section-title">💻 Technical Skills Inventory ({{ skills|length }} Total)</h3>
+
+        {% if categorized_skills %}
+            <div class="categorized-skills-grid">
+                {% for category, skill_list in categorized_skills.items() %}
+                    <div class="category-card">
+                        <div class="category-header">
+                            <h4>{{ category }}</h4>
+                            <span class="category-count">{{ skill_list|length }}</span>
+                        </div>
+                        <div>
+                            {% for skill in skill_list %}
+                                <span class="skill-tag">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted); margin-bottom: 24px;">No standard technical skills were detected. Be sure to list your programming languages, tools, and libraries clearly.</p>
+        {% endif %}
+
+        <!-- ATS Section Checklist -->
+        <h3 class="section-title">📋 ATS Section Health & Formatting Check</h3>
+        <div class="checklist-grid">
+            {% for section_name, is_present in sections.items() %}
+                <div class="check-item {% if is_present %}passed{% else %}missing{% endif %}">
+                    <span>{% if is_present %}✅{% else %}⚠️{% endif %}</span>
+                    <span>{{ section_name }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- AI Insights & Actionable Recommendations -->
+        <h3 class="section-title">💡 Actionable AI Recommendations</h3>
+        <div class="recommendations-grid">
+            
+            <div class="rec-card strengths">
+                <h3>🌟 Profile Strengths</h3>
+                <ul class="rec-list">
+                    {% if strengths %}
+                        {% for s in strengths %}
+                            <li>{{ s }}</li>
+                        {% endfor %}
+                    {% else %}
+                        <li>Clear foundational structure present in the document.</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="rec-card improvements">
+                <h3>🎯 High-Priority Improvements</h3>
+                <ul class="rec-list">
+                    {% if improvements %}
+                        {% for imp in improvements %}
+                            <li>{{ imp }}</li>
+                        {% endfor %}
+                    {% else %}
+                        <li>Resume meets all standard ATS benchmarks! Continue tailoring keywords for each specific role.</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Education & Experience Breakdown -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;">
+            <div>
+                <h3 class="section-title">🎓 Education Details</h3>
+                {% if education %}
+                    <div class="timeline-list">
+                        {% for item in education %}
+                            <div class="timeline-item">{{ item }}</div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--text-muted); font-size: 14px;">Education qualifications not clearly detected. Ensure degree name and institution are formatted on separate lines.</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <h3 class="section-title">💼 Experience Overview</h3>
+                <div class="timeline-list">
+                    <div class="timeline-item" style="border-left-color: var(--secondary);">
+                        <strong>Detected Tenure:</strong> {{ experience }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Chart initialization -->
+<script>
+    // 1. Radar Chart for Competency Matrix
+    const radarCtx = document.getElementById('competencyRadar');
+    new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+            labels: [
+                'ATS Compliance',
+                'Resume Strength',
+                'Technical Breadth',
+                'Project Impact',
+                'Role Match'
+            ],
+            datasets: [{
+                label: 'Profile Score',
+                data: [
+                    {{ ats_score }},
+                    {{ strength_score }},
+                    {{ technical_score }},
+                    {{ project_score }},
+                    {{ job_match_score }}
+                ],
+                fill: true,
+                backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                borderColor: '#6366f1',
+                pointBackgroundColor: '#4f46e5',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#4f46e5'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: '#e2e8f0' },
+                    grid: { color: '#f1f5f9' },
+                    pointLabels: {
+                        font: { size: 11, weight: '600', family: "'Plus Jakarta Sans', sans-serif" },
+                        color: '#475569'
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { stepSize: 25, display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // 2. Bar Chart for Score Comparisons
+    const barCtx = document.getElementById('metricsBar');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'ATS Score',
+                'Strength',
+                'Tech Breadth',
+                'Projects',
+                'Role Fit'
+            ],
+            datasets: [{
+                data: [
+                    {{ ats_score }},
+                    {{ strength_score }},
+                    {{ technical_score }},
+                    {{ project_score }},
+                    {{ job_match_score }}
+                ],
+                backgroundColor: [
+                    '#6366f1',
+                    '#10b981',
+                    '#06b6d4',
+                    '#f59e0b',
+                    '#8b5cf6'
+                ],
+                borderRadius: 8,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: '#f1f5f9' },
+                    ticks: { stepSize: 20, color: '#64748b' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { weight: '600' }, color: '#475569' }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
